@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Band Store
 
-## Getting Started
+バンドのアルバムとTシャツを販売するECサイト
 
-First, run the development server:
+## 技術スタック
 
+- **フロントエンド**: Next.js 14 (App Router), TypeScript, TailwindCSS, shadcn/ui
+- **バックエンド**: Next.js API Routes
+- **データベース**: Supabase (PostgreSQL)
+- **ORM**: Prisma
+- **認証**: NextAuth.js + Supabase Provider
+- **決済**: Stripe
+- **フォーム**: React Hook Form + Zod
+- **デプロイ**: Vercel
+
+## セットアップ
+
+1. 依存関係のインストール
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. 環境変数の設定
+`.env.local`ファイルを作成し、以下の環境変数を設定してください：
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_here
 
-## Learn More
+# Stripe
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key_here
+STRIPE_SECRET_KEY=your_stripe_secret_key_here
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret_here
 
-To learn more about Next.js, take a look at the following resources:
+# Database
+DATABASE_URL=your_database_url_here
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. データベースのマイグレーション
+```bash
+npx prisma generate
+npx prisma migrate dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. 開発サーバーの起動
+```bash
+npm run dev
+```
 
-## Deploy on Vercel
+## 機能
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 🎵 商品（アルバム・Tシャツ）の閲覧・検索
+- 🛒 カート機能
+- 💳 Stripe決済
+- 👤 ユーザー認証（Supabase）
+- 📦 注文管理
+- 🔐 管理画面（商品管理・注文管理）
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## プロジェクト構造
+
+```
+band-store/
+├── app/                    # Next.js App Router
+│   ├── api/               # API Routes
+│   ├── admin/             # 管理画面
+│   ├── auth/              # 認証ページ
+│   ├── cart/              # カートページ
+│   ├── products/          # 商品ページ
+│   └── page.tsx           # ホームページ
+├── components/            # Reactコンポーネント
+├── lib/                   # ユーティリティ
+├── prisma/               # Prismaスキーマ
+├── types/                # TypeScript型定義
+└── public/               # 静的ファイル
+```
+
+## 管理者アカウント
+
+管理画面にアクセスするには、Supabaseデータベースで対象ユーザーのroleをADMINに変更してください。
+
+```sql
+UPDATE "User" SET role = 'ADMIN' WHERE email = 'admin@example.com';
+```
