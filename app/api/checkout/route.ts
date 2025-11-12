@@ -21,30 +21,42 @@ export async function POST(req: NextRequest) {
 
     const { items }: CheckoutRequest = await req.json()
 
-    const line_items = await Promise.all(
-      items.map(async (item: CheckoutItem) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-        })
+    let line_items
+    try {
+      line_items = await Promise.all(
+        items.map(async (item: CheckoutItem) => {
+          const product = await prisma.product.findUnique({
+            where: { id: item.productId },
+          })
 
-        if (!product) {
-          throw new Error(`Product ${item.productId} not found`)
-        }
+          if (!product) {
+            throw new Error(`Product ${item.productId} not found`)
+          }
 
+        // 画像URLの検証（ローカルパスはStripeでは使用できない）
+        const validImageUrl = product.image && product.image.startsWith('http') ? product.image : undefined
+        
         return {
           price_data: {
-            currency: 'usd',
+            currency: 'jpy',
             product_data: {
               name: product.name,
               description: product.description || undefined,
-              images: product.image ? [product.image] : undefined,
+              images: validImageUrl ? [validImageUrl] : undefined,
             },
-            unit_amount: Math.round(product.price * 100),
+            unit_amount: Math.round(product.price), // 日本円は最小単位が1円なので100倍不要
           },
           quantity: item.quantity,
         }
-      })
-    )
+        })
+      )
+    } catch (dbError) {
+      console.error('Database error in checkout:', dbError)
+      return NextResponse.json(
+        { error: 'データベースエラーが発生しました' },
+        { status: 500 }
+      )
+    }
 
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

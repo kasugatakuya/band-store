@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
+import { useCart } from '@/contexts/CartContext'
 
 interface AddToCartButtonProps {
   productId: string
@@ -14,6 +15,7 @@ export default function AddToCartButton({ productId, disabled }: AddToCartButton
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { data: session } = useSession()
+  const { refreshCartCount } = useCart()
 
   const handleAddToCart = async () => {
     if (!session) {
@@ -35,6 +37,8 @@ export default function AddToCartButton({ productId, disabled }: AddToCartButton
         throw new Error('Failed to add to cart')
       }
 
+      // カートカウントを更新
+      refreshCartCount()
       router.refresh()
     } catch (error) {
       console.error('Error adding to cart:', error)
@@ -50,7 +54,7 @@ export default function AddToCartButton({ productId, disabled }: AddToCartButton
       size="lg"
       className="w-full md:w-auto"
     >
-      {loading ? 'Adding...' : 'Add to Cart'}
+      {loading ? 'カートに追加中...' : 'カートに追加'}
     </Button>
   )
 }

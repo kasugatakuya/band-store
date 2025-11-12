@@ -8,6 +8,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Trash2 } from 'lucide-react'
+import { useCart } from '@/contexts/CartContext'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -18,6 +19,7 @@ interface CartPageProps {
 export default function CartPage({ cart }: CartPageProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { refreshCartCount } = useCart()
 
   const handleRemoveItem = async (itemId: string) => {
     try {
@@ -29,6 +31,8 @@ export default function CartPage({ cart }: CartPageProps) {
         throw new Error('Failed to remove item')
       }
 
+      // カートカウントを更新
+      refreshCartCount()
       router.refresh()
     } catch (error) {
       console.error('Error removing item:', error)
@@ -51,6 +55,11 @@ export default function CartPage({ cart }: CartPageProps) {
         }),
       })
 
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'チェックアウトの開始に失敗しました')
+      }
+
       const { sessionId } = await response.json()
       const stripe = await stripePromise
 
@@ -65,6 +74,7 @@ export default function CartPage({ cart }: CartPageProps) {
       }
     } catch (error) {
       console.error('Checkout error:', error)
+      alert(error instanceof Error ? error.message : 'チェックアウトでエラーが発生しました')
     } finally {
       setLoading(false)
     }
@@ -73,10 +83,10 @@ export default function CartPage({ cart }: CartPageProps) {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-4">Your Cart is Empty</h1>
-        <p className="text-gray-600 mb-8">Start shopping to add items to your cart</p>
+        <h1 className="text-3xl font-bold mb-4">カートが空です</h1>
+        <p className="text-gray-600 mb-8">商品をカートに追加してお買い物を始めましょう</p>
         <Link href="/products">
-          <Button>Browse Products</Button>
+          <Button>商品を見る</Button>
         </Link>
       </div>
     )
@@ -89,7 +99,7 @@ export default function CartPage({ cart }: CartPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+      <h1 className="text-3xl font-bold mb-8">ショッピングカート</h1>
       
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
@@ -106,7 +116,7 @@ export default function CartPage({ cart }: CartPageProps) {
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center">
-                      <span className="text-gray-400 text-sm">No Image</span>
+                      <span className="text-gray-400 text-sm">画像なし</span>
                     </div>
                   )}
                 </div>
@@ -114,13 +124,13 @@ export default function CartPage({ cart }: CartPageProps) {
                 <div className="flex-1">
                   <h3 className="font-semibold">{item.product.name}</h3>
                   <p className="text-gray-600">
-                    {item.product.type === 'ALBUM' ? 'Album' : 'T-Shirt'}
+                    {item.product.type === 'ALBUM' ? 'アルバム' : 'Tシャツ'}
                   </p>
-                  <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                  <p className="text-sm text-gray-600">数量: {item.quantity}</p>
                 </div>
                 
                 <div className="text-right">
-                  <p className="font-semibold">${(item.product.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-semibold">¥{(item.product.price * item.quantity).toLocaleString('ja-JP')}</p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -138,19 +148,19 @@ export default function CartPage({ cart }: CartPageProps) {
         <div>
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+              <h2 className="text-xl font-semibold mb-4">注文概要</h2>
               <div className="flex justify-between mb-2">
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>小計</span>
+                <span>¥{subtotal.toLocaleString('ja-JP')}</span>
               </div>
               <div className="flex justify-between mb-4">
-                <span>Shipping</span>
-                <span>Free</span>
+                <span>送料</span>
+                <span>無料</span>
               </div>
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
-                  <span>Total</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>合計</span>
+                  <span>¥{subtotal.toLocaleString('ja-JP')}</span>
                 </div>
               </div>
               <Button
@@ -159,7 +169,7 @@ export default function CartPage({ cart }: CartPageProps) {
                 onClick={handleCheckout}
                 disabled={loading}
               >
-                {loading ? 'Processing...' : 'Proceed to Checkout'}
+                {loading ? '処理中...' : 'お会計へ進む'}
               </Button>
             </CardContent>
           </Card>

@@ -25,23 +25,23 @@ export default function ProductGrid({ products }: ProductGridProps) {
               </div>
             ) : (
               <div className="aspect-square bg-gray-200 rounded-t-lg flex items-center justify-center">
-                <span className="text-gray-400">No Image</span>
+                <span className="text-gray-400">画像なし</span>
               </div>
             )}
           </CardHeader>
           <CardContent className="flex-1 p-4">
             <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
             <p className="text-sm text-gray-600 mb-2">
-              {product.type === 'ALBUM' ? 'Album' : 'T-Shirt'}
+              {product.type === 'ALBUM' ? 'アルバム' : 'Tシャツ'}
             </p>
             {product.description && (
               <p className="text-sm text-gray-700 line-clamp-2">{product.description}</p>
             )}
           </CardContent>
           <CardFooter className="p-4 pt-0 flex justify-between items-center">
-            <span className="text-xl font-bold">${product.price.toFixed(2)}</span>
+            <span className="text-xl font-bold">¥{product.price.toLocaleString('ja-JP')}</span>
             <Link href={`/products/${product.id}`}>
-              <Button>View Details</Button>
+              <Button>詳細を見る</Button>
             </Link>
           </CardFooter>
         </Card>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,12 +12,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Image from 'next/image'
 
 const productSchema = z.object({
   name: z.string().min(1, '商品名は必須です'),
   description: z.string().optional(),
   price: z.number().positive('価格は正の数である必要があります'),
-  image: z.string().url().optional().or(z.literal('')),
+  image: z.string().optional(),
   type: z.enum(['ALBUM', 'TSHIRT']),
   stock: z.number().int().nonnegative('在庫数は0以上である必要があります'),
   featured: z.boolean(),
@@ -27,11 +28,15 @@ type ProductFormData = z.infer<typeof productSchema>
 
 interface ProductFormProps {
   product?: any
+  isEdit?: boolean
 }
 
-export default function ProductForm({ product }: ProductFormProps) {
+export default function ProductForm({ product, isEdit }: ProductFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(product?.image || null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   const {
     register,
@@ -51,6 +56,49 @@ export default function ProductForm({ product }: ProductFormProps) {
       featured: product?.featured || false,
     },
   })
+  
+  // 画像URLの変更を監視してプレビューを更新
+  const imageUrl = watch('image')
+  if (imageUrl && imageUrl !== previewUrl && !uploading) {
+    setPreviewUrl(imageUrl)
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // ファイルサイズチェック（5MB以下）
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ファイルサイズは5MB以下にしてください')
+      return
+    }
+
+    setUploading(true)
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || '画像のアップロードに失敗しました')
+      }
+
+      const data = await response.json()
+      setValue('image', data.url)
+      setPreviewUrl(data.url)
+    } catch (error) {
+      console.error('アップロードエラー:', error)
+      alert(error instanceof Error ? error.message : 'アップロードに失敗しました')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const onSubmit = async (data: ProductFormData) => {
     setLoading(true)
@@ -108,7 +156,7 @@ export default function ProductForm({ product }: ProductFormProps) {
           </div>
 
           <div>
-            <Label htmlFor="price">価格 ($)</Label>
+            <Label htmlFor="price">価格 (¥)</Label>
             <Input
               id="price"
               type="number"
@@ -121,13 +169,50 @@ export default function ProductForm({ product }: ProductFormProps) {
             )}
           </div>
 
-          <div>
-            <Label htmlFor="image">画像URL</Label>
-            <Input
-              id="image"
-              type="url"
-              {...register('image')}
-            />
+          <div className="space-y-2">
+            <Label htmlFor="image">商品画像</Label>
+            
+            {previewUrl && (
+              <div className="relative w-32 h-32 mb-2">
+                <Image
+                  src={previewUrl}
+                  alt="プレビュー"
+                  fill
+                  className="object-cover rounded"
+                />
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? 'アップロード中...' : '画像を選択'}
+              </Button>
+              
+              <Input
+                id="image"
+                type="text"
+                placeholder="または画像URLを入力"
+                {...register('image')}
+                className="flex-1"
+              />
+            </div>
+            
+            {errors.image && (
+              <p className="text-red-500 text-sm">{errors.image.message}</p>
+            )}
           </div>
 
           <div>

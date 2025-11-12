@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
           data: {
             userId,
             stripePaymentId: session.payment_intent as string,
-            total: session.amount_total ? session.amount_total / 100 : 0,
+            total: session.amount_total || 0, // 日本円は最小単位が1円なので100で割る必要なし
             status: 'PROCESSING',
             shippingAddress,
           },

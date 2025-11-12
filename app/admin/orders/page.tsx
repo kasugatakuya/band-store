@@ -23,24 +23,39 @@ export default async function AdminOrdersPage() {
     redirect('/')
   }
 
-  const orders = await prisma.order.findMany({
-    include: {
-      user: {
-        select: {
-          email: true,
-          name: true
+  let orders = []
+  
+  try {
+    orders = await prisma.order.findMany({
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true
+          }
+        },
+        items: {
+          include: {
+            product: true
+          }
         }
       },
-      items: {
-        include: {
-          product: true
-        }
+      orderBy: {
+        createdAt: 'desc'
       }
-    },
-    orderBy: {
-      createdAt: 'desc'
-    }
-  })
+    })
+    
+    // デバッグ用：注文データの価格をコンソールに出力
+    orders.forEach(order => {
+      console.log(`注文 ${order.id}: total=${order.total}`)
+      order.items.forEach(item => {
+        console.log(`  アイテム ${item.id}: price=${item.price}, product.price=${item.product.price}`)
+      })
+    })
+    
+  } catch (error) {
+    console.error('Failed to fetch orders:', error)
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -30,7 +30,7 @@ export default async function ProductDetailPage({
             />
           ) : (
             <div className="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
-              <span className="text-gray-400 text-2xl">No Image</span>
+              <span className="text-gray-400 text-2xl">画像なし</span>
             </div>
           )}
         </div>
@@ -38,14 +38,14 @@ export default async function ProductDetailPage({
         <div>
           <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
           <p className="text-2xl text-gray-600 mb-2">
-            {product.type === "ALBUM" ? "Album" : "T-Shirt"}
+            {product.type === "ALBUM" ? "アルバム" : "Tシャツ"}
           </p>
-          <p className="text-3xl font-bold mb-6">${product.price.toFixed(2)}</p>
+          <p className="text-3xl font-bold mb-6">¥{product.price.toLocaleString('ja-JP')}</p>
 
           {product.description && (
             <Card className="mb-6">
               <CardContent className="p-4">
-                <h2 className="font-semibold mb-2">Description</h2>
+                <h2 className="font-semibold mb-2">商品説明</h2>
                 <p className="text-gray-700">{product.description}</p>
               </CardContent>
             </Card>
@@ -53,10 +53,10 @@ export default async function ProductDetailPage({
 
           <div className="mb-6">
             <p className="text-sm text-gray-600">
-              Stock:{" "}
+              在庫:{" "}
               {product.stock > 0
-                ? `${product.stock} available`
-                : "Out of stock"}
+                ? `${product.stock}個在庫あり`
+                : "在庫切れ"}
             </p>
           </div>
 
