@@ -16,7 +16,7 @@ export default function Header() {
         <nav className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold">
             <Music className="w-6 h-6" />
-            Band Store
+            バンドストア
           </Link>
 
           <div className="flex items-center gap-4">
@@ -38,6 +38,9 @@ export default function Header() {
                 </Link>
                 <Link href="/orders">
                   <Button variant="ghost">注文履歴</Button>
+                </Link>
+                <Link href="/profile">
+                  <Button variant="ghost">プロフィール</Button>
                 </Link>
                 <Link href="/admin">
                   <Button variant="ghost">管理者</Button>
