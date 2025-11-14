@@ -8,7 +8,7 @@ const updateProductSchema = z.object({
   description: z.string().nullable().optional(),
   price: z.number().positive(),
   image: z.string().nullable().optional(),
-  type: z.enum(['ALBUM', 'TSHIRT']),
+  type: z.enum(['CD', 'CLOTHING', 'GOODS']),
   stock: z.number().int().nonnegative(),
   featured: z.boolean(),
 })

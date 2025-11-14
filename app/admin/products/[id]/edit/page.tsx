@@ -45,7 +45,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">商品を編集</h1>
-      <ProductForm product={product} isEdit />
+      <ProductForm product={product} />
     </div>
   )
 }

@@ -106,13 +106,19 @@ export default async function OrdersPage() {
                 <div className="space-y-3">
                   {order.items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4">
-                      {item.product.image && (
-                        <img
-                          src={item.product.image}
-                          alt={item.product.name}
-                          className="w-16 h-16 object-cover rounded"
-                        />
-                      )}
+                      <div className="w-16 h-16 rounded overflow-hidden">
+                        {item.product.image ? (
+                          <img
+                            src={item.product.image}
+                            alt={item.product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-400 text-xs">画像なし</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex-1">
                         <h4 className="font-medium">{item.product.name}</h4>
                         <p className="text-sm text-gray-600">

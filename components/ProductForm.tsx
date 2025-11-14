@@ -13,13 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Image from 'next/image'
+import { Product } from '@/types/product'
 
 const productSchema = z.object({
   name: z.string().min(1, '商品名は必須です'),
   description: z.string().optional(),
   price: z.number().positive('価格は正の数である必要があります'),
   image: z.string().optional(),
-  type: z.enum(['ALBUM', 'TSHIRT']),
+  type: z.enum(['CD', 'CLOTHING', 'GOODS']),
   stock: z.number().int().nonnegative('在庫数は0以上である必要があります'),
   featured: z.boolean(),
 })
@@ -27,11 +28,10 @@ const productSchema = z.object({
 type ProductFormData = z.infer<typeof productSchema>
 
 interface ProductFormProps {
-  product?: any
-  isEdit?: boolean
+  product?: Product
 }
 
-export default function ProductForm({ product, isEdit }: ProductFormProps) {
+export default function ProductForm({ product }: ProductFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -51,7 +51,7 @@ export default function ProductForm({ product, isEdit }: ProductFormProps) {
       description: product?.description || '',
       price: product?.price || 0,
       image: product?.image || '',
-      type: product?.type || 'ALBUM',
+      type: product?.type || 'CD',
       stock: product?.stock || 0,
       featured: product?.featured || false,
     },
@@ -219,14 +219,15 @@ export default function ProductForm({ product, isEdit }: ProductFormProps) {
             <Label htmlFor="type">商品タイプ</Label>
             <Select
               value={watch('type')}
-              onValueChange={(value) => setValue('type', value as 'ALBUM' | 'TSHIRT')}
+              onValueChange={(value) => setValue('type', value as 'CD' | 'CLOTHING' | 'GOODS')}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALBUM">アルバム</SelectItem>
-                <SelectItem value="TSHIRT">Tシャツ</SelectItem>
+                <SelectItem value="CD">CD</SelectItem>
+                <SelectItem value="CLOTHING">服</SelectItem>
+                <SelectItem value="GOODS">雑貨</SelectItem>
               </SelectContent>
             </Select>
           </div>

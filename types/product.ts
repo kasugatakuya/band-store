@@ -1,4 +1,14 @@
-export type ProductType = 'ALBUM' | 'TSHIRT'
+export type ProductType = 'CD' | 'CLOTHING' | 'GOODS'
+
+export interface ShippingAddress {
+  zipCode: string
+  prefecture: string
+  city: string
+  addressLine1: string
+  addressLine2?: string
+  phone?: string
+  name?: string
+}
 
 export interface Product {
   id: string
@@ -49,7 +59,7 @@ export interface Order {
   total: number
   status: OrderStatus
   stripePaymentId?: string | null
-  shippingAddress: any
+  shippingAddress: ShippingAddress
   createdAt: Date
   updatedAt: Date
 }

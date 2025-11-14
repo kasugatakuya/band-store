@@ -1,119 +1,188 @@
-"use client"
+"use client";
 
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { loadStripe } from '@stripe/stripe-js'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Trash2 } from 'lucide-react'
-import { useCart } from '@/contexts/CartContext'
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { loadStripe } from "@stripe/stripe-js";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Trash2, Plus, Minus } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { Product } from "@/types/product";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
+
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+  phone?: string;
+  zipCode?: string;
+  prefecture?: string;
+  city?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+}
+
+interface CartWithItems {
+  id: string;
+  userId: string;
+  items: {
+    id: string;
+    cartId: string;
+    productId: string;
+    quantity: number;
+    product: Product;
+  }[];
+}
 
 interface CartPageProps {
-  cart: any
-  user: any
+  cart: CartWithItems | null;
+  user: User | null;
 }
 
 export default function CartPage({ cart, user }: CartPageProps) {
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const { refreshCartCount } = useCart()
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { refreshCartCount } = useCart();
 
   const handleRemoveItem = async (itemId: string) => {
     try {
       const response = await fetch(`/api/cart?itemId=${itemId}`, {
-        method: 'DELETE',
-      })
+        method: "DELETE",
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to remove item')
+        throw new Error("Failed to remove item");
       }
 
       // カートカウントを更新
-      refreshCartCount()
-      router.refresh()
+      refreshCartCount();
+      router.refresh();
     } catch (error) {
-      console.error('Error removing item:', error)
+      console.error("Error removing item:", error);
     }
-  }
+  };
 
-  const handleCheckout = async () => {
-    // 住所情報が登録されているかチェック
-    const hasAddress = user?.zipCode && user?.prefecture && user?.city && user?.addressLine1
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
     
-    if (!hasAddress) {
-      // 住所情報がない場合はプロフィール編集ページへリダイレクト
-      router.push('/profile/edit?redirect=checkout')
-      return
-    }
-
-    setLoading(true)
     try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
+      const response = await fetch(`/api/cart`, {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          items: cart.items.map((item: any) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
+          itemId,
+          quantity: newQuantity,
         }),
-      })
+      });
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'チェックアウトの開始に失敗しました')
+        throw new Error("Failed to update quantity");
       }
 
-      const { sessionId } = await response.json()
-      const stripe = await stripePromise
+      // カートカウントを更新
+      refreshCartCount();
+      router.refresh();
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
+  };
+
+  const handleCheckout = async () => {
+    // カートが空の場合は処理を中止
+    if (!cart || cart.items.length === 0) {
+      return;
+    }
+
+    // 住所情報が登録されているかチェック
+    const hasAddress =
+      user?.zipCode && user?.prefecture && user?.city && user?.addressLine1;
+
+    if (!hasAddress) {
+      // 住所情報がない場合はプロフィール編集ページへリダイレクト
+      router.push("/profile/edit?redirect=checkout");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items:
+            cart?.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })) || [],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "チェックアウトの開始に失敗しました"
+        );
+      }
+
+      const { sessionId } = await response.json();
+      const stripe = await stripePromise;
 
       if (!stripe) {
-        throw new Error('Stripe failed to load')
+        throw new Error("Stripe failed to load");
       }
 
-      const { error } = await stripe.redirectToCheckout({ sessionId })
+      const { error } = await stripe.redirectToCheckout({ sessionId });
 
       if (error) {
-        console.error('Stripe error:', error)
+        console.error("Stripe error:", error);
       }
     } catch (error) {
-      console.error('Checkout error:', error)
-      alert(error instanceof Error ? error.message : 'チェックアウトでエラーが発生しました')
+      console.error("Checkout error:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "チェックアウトでエラーが発生しました"
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (!cart || cart.items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-3xl font-bold mb-4">カートが空です</h1>
-        <p className="text-gray-600 mb-8">商品をカートに追加してお買い物を始めましょう</p>
+        <p className="text-gray-600 mb-8">
+          商品をカートに追加してお買い物を始めましょう
+        </p>
         <Link href="/products">
           <Button>商品を見る</Button>
         </Link>
       </div>
-    )
+    );
   }
 
   const subtotal = cart.items.reduce(
-    (acc: number, item: any) => acc + item.product.price * item.quantity,
+    (acc: number, item) => acc + item.product.price * item.quantity,
     0
-  )
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">ショッピングカート</h1>
-      
+
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2">
-          {cart.items.map((item: any) => (
+          {cart.items.map((item) => (
             <Card key={item.id} className="mb-4">
               <CardContent className="flex items-center p-4">
                 <div className="relative w-24 h-24 mr-4">
@@ -130,17 +199,46 @@ export default function CartPage({ cart, user }: CartPageProps) {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex-1">
                   <h3 className="font-semibold">{item.product.name}</h3>
                   <p className="text-gray-600">
-                    {item.product.type === 'ALBUM' ? 'アルバム' : 'Tシャツ'}
+                    {item.product.type === "CD"
+                      ? "CD"
+                      : item.product.type === "CLOTHING"
+                      ? "服"
+                      : "雑貨"}
                   </p>
-                  <p className="text-sm text-gray-600">数量: {item.quantity}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-sm text-gray-600">数量:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                      disabled={item.quantity <= 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="min-w-8 text-center">{item.quantity}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                
+
                 <div className="text-right">
-                  <p className="font-semibold">¥{(item.product.price * item.quantity).toLocaleString('ja-JP')}</p>
+                  <p className="font-semibold">
+                    ¥
+                    {(item.product.price * item.quantity).toLocaleString(
+                      "ja-JP"
+                    )}
+                  </p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -154,14 +252,14 @@ export default function CartPage({ cart, user }: CartPageProps) {
             </Card>
           ))}
         </div>
-        
+
         <div>
           <Card>
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">注文概要</h2>
               <div className="flex justify-between mb-2">
                 <span>小計</span>
-                <span>¥{subtotal.toLocaleString('ja-JP')}</span>
+                <span>¥{subtotal.toLocaleString("ja-JP")}</span>
               </div>
               <div className="flex justify-between mb-4">
                 <span>送料</span>
@@ -170,7 +268,7 @@ export default function CartPage({ cart, user }: CartPageProps) {
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold">
                   <span>合計</span>
-                  <span>¥{subtotal.toLocaleString('ja-JP')}</span>
+                  <span>¥{subtotal.toLocaleString("ja-JP")}</span>
                 </div>
               </div>
               <Button
@@ -179,12 +277,19 @@ export default function CartPage({ cart, user }: CartPageProps) {
                 onClick={handleCheckout}
                 disabled={loading}
               >
-                {loading ? '処理中...' : 
-                 (!user?.zipCode || !user?.prefecture || !user?.city || !user?.addressLine1) 
-                   ? '配送先住所を登録' 
-                   : 'お会計へ進む'}
+                {loading
+                  ? "処理中..."
+                  : !user?.zipCode ||
+                    !user?.prefecture ||
+                    !user?.city ||
+                    !user?.addressLine1
+                  ? "配送先住所を登録"
+                  : "お会計へ進む"}
               </Button>
-              {(!user?.zipCode || !user?.prefecture || !user?.city || !user?.addressLine1) && (
+              {(!user?.zipCode ||
+                !user?.prefecture ||
+                !user?.city ||
+                !user?.addressLine1) && (
                 <p className="text-sm text-gray-600 mt-2 text-center">
                   お会計を進めるには配送先住所の登録が必要です
                 </p>
@@ -194,5 +299,5 @@ export default function CartPage({ cart, user }: CartPageProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -38,7 +38,8 @@ export default async function ProductDetailPage({
         <div>
           <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
           <p className="text-2xl text-gray-600 mb-2">
-            {product.type === "ALBUM" ? "アルバム" : "Tシャツ"}
+            {product.type === "CD" ? "CD" : 
+             product.type === "CLOTHING" ? "服" : "雑貨"}
           </p>
           <p className="text-3xl font-bold mb-6">¥{product.price.toLocaleString('ja-JP')}</p>
 
@@ -46,7 +47,7 @@ export default async function ProductDetailPage({
             <Card className="mb-6">
               <CardContent className="p-4">
                 <h2 className="font-semibold mb-2">商品説明</h2>
-                <p className="text-gray-700">{product.description}</p>
+                <p className="text-gray-700 whitespace-pre-wrap">{product.description}</p>
               </CardContent>
             </Card>
           )}

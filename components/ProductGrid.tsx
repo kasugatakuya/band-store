@@ -32,10 +32,11 @@ export default function ProductGrid({ products }: ProductGridProps) {
           <CardContent className="flex-1 p-4">
             <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
             <p className="text-sm text-gray-600 mb-2">
-              {product.type === 'ALBUM' ? 'アルバム' : 'Tシャツ'}
+              {product.type === 'CD' ? 'CD' : 
+               product.type === 'CLOTHING' ? '服' : '雑貨'}
             </p>
             {product.description && (
-              <p className="text-sm text-gray-700 line-clamp-2">{product.description}</p>
+              <p className="text-sm text-gray-700 line-clamp-2 whitespace-pre-wrap">{product.description}</p>
             )}
           </CardContent>
           <CardFooter className="p-4 pt-0 flex justify-between items-center">

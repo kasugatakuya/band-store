@@ -92,6 +92,31 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await getSession()
+    if (!session || !session.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { itemId, quantity } = await req.json()
+
+    if (!itemId || !quantity || quantity < 1) {
+      return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
+    }
+
+    await prisma.cartItem.update({
+      where: { id: itemId },
+      data: { quantity },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error updating cart item:', error)
+    return NextResponse.json({ error: 'Error updating cart item' }, { status: 500 })
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getSession()

@@ -66,7 +66,8 @@ export default async function AdminProductsPage() {
               <div className="flex-1">
                 <h3 className="font-semibold">{product.name}</h3>
                 <p className="text-sm text-gray-600">
-                  {product.type === "ALBUM" ? "アルバム" : "Tシャツ"} - ¥
+                  {product.type === "CD" ? "CD" : 
+                   product.type === "CLOTHING" ? "服" : "雑貨"} - ¥
                   {product.price.toLocaleString('ja-JP')} - 在庫: {product.stock}
                 </p>
               </div>

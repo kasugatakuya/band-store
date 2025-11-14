@@ -14,14 +14,14 @@ model User {
   email        String   @unique
   name         String?
   role         Role     @default(USER)
-  phone        String?
-  zipCode      String?
-  prefecture   String?
-  city         String?
-  addressLine1 String?
-  addressLine2 String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  phone        String?
+  prefecture   String?
+  zipCode      String?
   cart         Cart?
   orders       Order[]
 }
@@ -94,8 +94,9 @@ enum Role {
 }
 
 enum ProductType {
-  ALBUM
-  TSHIRT
+  CD
+  CLOTHING
+  GOODS
 }
 
 enum OrderStatus {
