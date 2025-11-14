@@ -19,6 +19,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // ユーザー情報を取得（住所情報含む）
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
     const { items }: CheckoutRequest = await req.json()
 
     let line_items
@@ -58,6 +67,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // 住所情報の準備
+    const shippingAddress = {
+      name: user.name || '',
+      zipCode: user.zipCode || '',
+      prefecture: user.prefecture || '',
+      city: user.city || '',
+      addressLine1: user.addressLine1 || '',
+      addressLine2: user.addressLine2 || '',
+      phone: user.phone || '',
+    }
+
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items,
@@ -68,6 +88,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         userId: session.user.id,
         orderItems: JSON.stringify(items),
+        shippingAddress: JSON.stringify(shippingAddress),
       },
     })
 

@@ -45,9 +45,10 @@ export default async function AdminOrdersPage() {
       }
     })
     
-    // デバッグ用：注文データの価格をコンソールに出力
+    // デバッグ用：注文データの価格と住所をコンソールに出力
     orders.forEach(order => {
       console.log(`注文 ${order.id}: total=${order.total}`)
+      console.log(`  配送先住所:`, order.shippingAddress)
       order.items.forEach(item => {
         console.log(`  アイテム ${item.id}: price=${item.price}, product.price=${item.product.price}`)
       })
@@ -152,7 +153,18 @@ export default async function AdminOrdersPage() {
                     <div>
                       <h4 className="font-semibold mb-2">配送先住所:</h4>
                       <div className="bg-gray-50 p-3 rounded text-sm">
-                        <pre>{JSON.stringify(order.shippingAddress, null, 2)}</pre>
+                        {(() => {
+                          const addr = order.shippingAddress as any;
+                          return (
+                            <>
+                              {addr.name && <p><strong>宛先:</strong> {addr.name}</p>}
+                              <p><strong>郵便番号:</strong> {addr.zipCode}</p>
+                              <p><strong>住所:</strong> {addr.prefecture}{addr.city}{addr.addressLine1}</p>
+                              {addr.addressLine2 && <p><strong>建物名・部屋番号:</strong> {addr.addressLine2}</p>}
+                              {addr.phone && <p><strong>電話番号:</strong> {addr.phone}</p>}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}
