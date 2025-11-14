@@ -12,10 +12,16 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <section className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-20">
+      <section className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-20 -mt-20 pt-40">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-4">Band Storeへようこそ</h1>
-          <p className="text-xl mb-8">最新アルバムと限定グッズを発見しよう</p>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            Band Storeへ
+            <br className="md:hidden" />
+            ようこそ
+          </h1>
+          <p className="text-lg md:text-xl mb-8">
+            最新アルバムと限定グッズを発見しよう
+          </p>
           <Link href="/products">
             <Button size="lg" variant="secondary">
               今すぐショッピング

@@ -67,7 +67,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               id: user.id,
               email: user.email || '',
               name: user.name || user.email || '',
-              role: 'ADMIN'
+              role: 'USER'
             }
           })
         } catch (error) {
@@ -77,11 +77,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token
     },
     async session({ session, token }) {
-      if (token) {
-        session.user = {
-          ...session.user,
-          id: token.id as string,
-          email: token.email as string,
+      if (token && session.user) {
+        session.user.id = token.id as string
+        session.user.email = token.email as string
+        
+        // データベースからユーザー情報を取得してroleを追加
+        try {
+          const user = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true }
+          })
+          if (user) {
+            session.user.role = user.role
+          }
+        } catch (error) {
+          console.error('Failed to fetch user role:', error)
         }
       }
       return session

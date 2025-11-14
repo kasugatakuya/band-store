@@ -10,16 +10,28 @@ export default async function Cart() {
     redirect('/auth/signin')
   }
 
-  const cart = await prisma.cart.findUnique({
-    where: { userId: session.user.id },
-    include: {
-      items: {
-        include: {
-          product: true,
+  const [cart, user] = await Promise.all([
+    prisma.cart.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
         },
       },
-    },
-  })
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        zipCode: true,
+        prefecture: true,
+        city: true,
+        addressLine1: true,
+        addressLine2: true,
+      },
+    }),
+  ])
 
-  return <CartPage cart={cart} />
+  return <CartPage cart={cart} user={user} />
 }

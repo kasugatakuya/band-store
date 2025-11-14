@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface UserProfile {
@@ -20,26 +19,12 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const { data: session } = useSession();
-  const [profile, setProfile] = useState<UserProfile>({
-    name: "",
-    email: "",
-    phone: "",
-    zipCode: "",
-    prefecture: "",
-    city: "",
-    addressLine1: "",
-    addressLine2: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (session?.user) {
-      setProfile((prev) => ({
-        ...prev,
-        name: session.user.name || "",
-        email: session.user.email || "",
-      }));
       fetchProfile();
     }
   }, [session]);
@@ -50,45 +35,17 @@ export default function ProfilePage() {
       const response = await fetch("/api/profile");
       if (response.ok) {
         const data = await response.json();
-        setProfile(data);
+        setProfile({
+          ...data,
+          email: session?.user?.email || data.email,
+          name: session?.user?.name || data.name,
+        });
       }
     } catch (error) {
       console.error("プロフィールの取得に失敗しました:", error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    
-    try {
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(profile),
-      });
-
-      if (response.ok) {
-        alert("プロフィールが更新されました");
-      } else {
-        const errorData = await response.json().catch(() => ({ error: "不明なエラー" }));
-        console.error("更新エラー:", errorData);
-        alert(`更新に失敗しました: ${errorData.error || errorData.details || "不明なエラー"}`);
-      }
-    } catch (error) {
-      console.error("プロフィールの更新に失敗しました:", error);
-      alert("更新に失敗しました");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleChange = (field: keyof UserProfile, value: string) => {
-    setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
   if (!session) {
@@ -99,114 +56,73 @@ export default function ProfilePage() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-2xl mx-auto">
+          <CardContent className="p-8">
+            <p className="text-center">読み込み中...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-2xl">プロフィール設定</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-2xl">プロフィール</CardTitle>
+          <Button onClick={() => router.push("/profile/edit")}>
+            編集
+          </Button>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p>読み込み中...</p>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">お名前</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={profile.name || ""}
-                    onChange={(e) => handleChange("name", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">メールアドレス</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profile.email}
-                    disabled
-                  />
-                </div>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">お名前</h3>
+                <p className="text-lg">{profile?.name || "未設定"}</p>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">電話番号</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={profile.phone || ""}
-                  onChange={(e) => handleChange("phone", e.target.value)}
-                  placeholder="090-1234-5678"
-                />
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">メールアドレス</h3>
+                <p className="text-lg">{profile?.email}</p>
               </div>
+            </div>
 
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">電話番号</h3>
+              <p className="text-lg">{profile?.phone || "未設定"}</p>
+            </div>
+
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">配送先住所</h3>
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">住所情報</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode">郵便番号</Label>
-                    <Input
-                      id="zipCode"
-                      type="text"
-                      value={profile.zipCode || ""}
-                      onChange={(e) => handleChange("zipCode", e.target.value)}
-                      placeholder="123-4567"
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">郵便番号</h4>
+                    <p className="text-lg">{profile?.zipCode || "未設定"}</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="prefecture">都道府県</Label>
-                    <Input
-                      id="prefecture"
-                      type="text"
-                      value={profile.prefecture || ""}
-                      onChange={(e) => handleChange("prefecture", e.target.value)}
-                      placeholder="東京都"
-                    />
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">都道府県</h4>
+                    <p className="text-lg">{profile?.prefecture || "未設定"}</p>
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="city">市区町村</Label>
-                  <Input
-                    id="city"
-                    type="text"
-                    value={profile.city || ""}
-                    onChange={(e) => handleChange("city", e.target.value)}
-                    placeholder="渋谷区"
-                  />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-1">市区町村</h4>
+                  <p className="text-lg">{profile?.city || "未設定"}</p>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="addressLine1">住所1</Label>
-                  <Input
-                    id="addressLine1"
-                    type="text"
-                    value={profile.addressLine1 || ""}
-                    onChange={(e) => handleChange("addressLine1", e.target.value)}
-                    placeholder="丁目番地"
-                  />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-1">住所1</h4>
+                  <p className="text-lg">{profile?.addressLine1 || "未設定"}</p>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="addressLine2">住所2（建物名など）</Label>
-                  <Input
-                    id="addressLine2"
-                    type="text"
-                    value={profile.addressLine2 || ""}
-                    onChange={(e) => handleChange("addressLine2", e.target.value)}
-                    placeholder="マンション名・部屋番号など"
-                  />
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-1">住所2（建物名など）</h4>
+                  <p className="text-lg">{profile?.addressLine2 || "未設定"}</p>
                 </div>
               </div>
-
-              <Button type="submit" disabled={saving} className="w-full">
-                {saving ? "更新中..." : "プロフィールを更新"}
-              </Button>
-            </form>
-          )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

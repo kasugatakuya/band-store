@@ -14,9 +14,10 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 interface CartPageProps {
   cart: any
+  user: any
 }
 
-export default function CartPage({ cart }: CartPageProps) {
+export default function CartPage({ cart, user }: CartPageProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { refreshCartCount } = useCart()
@@ -40,6 +41,15 @@ export default function CartPage({ cart }: CartPageProps) {
   }
 
   const handleCheckout = async () => {
+    // 住所情報が登録されているかチェック
+    const hasAddress = user?.zipCode && user?.prefecture && user?.city && user?.addressLine1
+    
+    if (!hasAddress) {
+      // 住所情報がない場合はプロフィール編集ページへリダイレクト
+      router.push('/profile/edit?redirect=checkout')
+      return
+    }
+
     setLoading(true)
     try {
       const response = await fetch('/api/checkout', {
@@ -169,8 +179,16 @@ export default function CartPage({ cart }: CartPageProps) {
                 onClick={handleCheckout}
                 disabled={loading}
               >
-                {loading ? '処理中...' : 'お会計へ進む'}
+                {loading ? '処理中...' : 
+                 (!user?.zipCode || !user?.prefecture || !user?.city || !user?.addressLine1) 
+                   ? '配送先住所を登録' 
+                   : 'お会計へ進む'}
               </Button>
+              {(!user?.zipCode || !user?.prefecture || !user?.city || !user?.addressLine1) && (
+                <p className="text-sm text-gray-600 mt-2 text-center">
+                  お会計を進めるには配送先住所の登録が必要です
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
